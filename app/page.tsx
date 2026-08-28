@@ -1,69 +1,128 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+
+interface Market {
+  id: string;
+  name: string;
+  result: string;
+  openTime: string;
+  closeTime: string;
+  isLive: boolean;
+}
+
+const INITIAL_MARKETS: Market[] = [
+  {
+    id: "1",
+    name: "SRIDEVI",
+    result: "130 - 40 - 280",
+    openTime: "11:35 AM",
+    closeTime: "12:35 PM",
+    isLive: false,
+  },
+  {
+    id: "2",
+    name: "TIME BAZAR",
+    result: "246 - 28 - 189",
+    openTime: "01:10 PM",
+    closeTime: "02:10 PM",
+    isLive: false,
+  },
+  {
+    id: "3",
+    name: "KALYAN MATKA",
+    result: "256 - 38 - 189",
+    openTime: "04:10 PM",
+    closeTime: "06:10 PM",
+    isLive: true,
+  },
+  {
+    id: "4",
+    name: "MILAN DAY",
+    result: "110 - 29 - 450",
+    openTime: "03:15 PM",
+    closeTime: "05:15 PM",
+    isLive: true,
+  },
+  {
+    id: "5",
+    name: "RAJDHANI NIGHT",
+    result: "*** - ** - ***",
+    openTime: "09:25 PM",
+    closeTime: "11:35 PM",
+    isLive: false,
+  },
+  {
+    id: "6",
+    name: "MAIN BAZAR",
+    result: "*** - ** - ***",
+    openTime: "09:40 PM",
+    closeTime: "12:05 AM",
+    isLive: false,
+  },
+];
 
 export default function Home() {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredMarkets = INITIAL_MARKETS.filter((market) =>
+    market.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
+      {/* Header Section */}
+      <header className="max-w-4xl mx-auto text-center py-6 border-b border-slate-800">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-amber-400 tracking-wider">
+          DPBOSS MARKET RESULTS
+        </h1>
+        <p className="text-slate-400 text-sm md:text-base mt-2">
+          Fastest Live Satta Matka Results & Panel Charts
+        </p>
+
+        {/* Search Bar */}
+        <div className="mt-6 max-w-md mx-auto">
+          <input
+            type="text"
+            placeholder="Search market name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition"
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </header>
+
+      {/* Live Market Grid */}
+      <section className="max-w-4xl mx-auto mt-8 grid gap-4 md:grid-cols-2">
+        {filteredMarkets.map((market) => (
+          <div
+            key={market.id}
+            className="bg-slate-900 border border-slate-800 hover:border-amber-500/40 rounded-xl p-5 shadow-lg transition"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-bold text-amber-300">{market.name}</h2>
+              {market.isLive ? (
+                <span className="bg-emerald-500/20 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-500/30 animate-pulse">
+                  LIVE
+                </span>
+              ) : (
+                <span className="bg-slate-800 text-slate-400 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  CLOSED
+                </span>
+              )}
+            </div>
+
+            <p className="text-3xl font-black text-center my-4 tracking-widest text-white">
+              {market.result}
+            </p>
+
+            <div className="flex justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+              <span>Open: {market.openTime}</span>
+              <span>Close: {market.closeTime}</span>
+            </div>
+          </div>
+        ))}
+      </section>
+    </main>
   );
 }
