@@ -6,8 +6,7 @@ export async function GET() {
     const markets = await prisma.market.findMany({
       include: {
         results: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
+          orderBy: { date: "desc" },
         },
       },
       orderBy: { createdAt: "asc" },

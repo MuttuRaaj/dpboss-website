@@ -1,137 +1,179 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
-interface Result {
-  openPanna: string;
-  jodi: string;
-  closePanna: string;
-}
-
 interface Market {
-  id: string;
+  id: string | number;
   name: string;
   openTime: string;
   closeTime: string;
-  results: Result[];
+  results?: Array<{
+    openPanna: string | null;
+    jodi: string | null;
+    closePanna: string | null;
+  }>;
 }
 
-export default function Home() {
+export default function HomePage() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastRefreshed, setLastRefreshed] = useState<string>("");
 
-  const fetchMarkets = async () => {
+  const fetchLiveResults = async () => {
     try {
-      const res = await fetch("/api/markets", { cache: "no-store" });
+      const res = await fetch("/api/markets");
       const data = await res.json();
-      if (Array.isArray(data)) setMarkets(data);
+      const list: Market[] = Array.isArray(data) ? data : data.markets || [];
+      setMarkets(list);
+      setLastRefreshed(new Date().toLocaleTimeString());
     } catch (err) {
-      console.error("Failed to fetch live markets:", err);
+      console.error("Error fetching live results", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMarkets();
-    const timer = setInterval(fetchMarkets, 5000);
-    return () => clearInterval(timer);
+    fetchLiveResults();
+    const interval = setInterval(fetchLiveResults, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
-      <header className="bg-amber-500 text-slate-950 text-center py-5 px-4 shadow-lg border-b-4 border-amber-600">
-        <h1 className="text-3xl md:text-5xl font-black tracking-wider uppercase">
-          DPBOSS LIVE
-        </h1>
-        <p className="text-xs md:text-sm font-bold tracking-widest mt-1 uppercase">
-          Fastest Live Satta Matka Results & Panel Charts
-        </p>
+    <div className="min-h-screen bg-[#f1f5f9] text-slate-800 pb-16">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#0c1a30] text-amber-400 font-black flex items-center justify-center text-sm shadow-xs">
+              DP
+            </div>
+            <div>
+              <h1 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
+                DPBOSS LIVE RESULTS
+              </h1>
+              <p className="text-[11px] text-slate-500 hidden sm:block">
+                Fastest Live Satta Matka Results & Panel Charts
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Feed Active
+            </span>
+            <button
+              onClick={fetchLiveResults}
+              className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+            <Link
+              href="/admin"
+              className="text-xs font-bold bg-[#0c1a30] hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1"
+            >
+              Admin
+            </Link>
+          </div>
+        </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 mt-8 space-y-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-md">
-          <div className="flex items-center space-x-3">
-            <span className="relative flex h-3.5 w-3.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
-            </span>
-            <span className="text-xs md:text-sm font-bold text-emerald-400 uppercase tracking-wide">
-              Live Database Feed Active
-            </span>
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="bg-[#0c1a30] text-white rounded-xl p-4 sm:p-5 shadow-xs mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div>
+            <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-wider text-amber-400">
+              Today Live Market Results
+            </h2>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Updates in real-time upon declaration. Last sync: {lastRefreshed || "Just now"}
+            </p>
           </div>
-          <button
-            onClick={fetchMarkets}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-bold px-3 py-1.5 rounded transition-all"
-          >
-            ↻ Refresh
-          </button>
+          <div className="text-xs font-semibold bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 text-slate-200">
+            Total Markets: {markets.length}
+          </div>
         </div>
 
-        <section className="space-y-4">
-          <div className="bg-gradient-to-r from-amber-600 to-yellow-500 text-slate-950 font-black text-center py-3 rounded-xl text-lg uppercase tracking-wide shadow">
-            TODAY LIVE RESULTS
+        {loading ? (
+          <div className="text-center py-20 text-slate-400 text-sm font-medium">
+            Fetching market draws...
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {markets.map((m, index) => {
+              const res = m.results && m.results.length > 0 ? m.results[0] : null;
 
-          {loading ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-400">
-              Loading live results...
-            </div>
-          ) : markets.length === 0 ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center text-slate-400">
-              No markets found. Add them in the <a href="/admin" className="text-amber-400 underline">Admin Dashboard</a>.
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {markets.map((market) => {
-                const latest = market.results?.[0];
-                return (
-                  <div
-                    key={market.id}
-                    className="bg-slate-900 border border-slate-800 hover:border-amber-500/40 rounded-xl p-5 text-center shadow-lg transition-all flex flex-col justify-between"
-                  >
+              let openP = res?.openPanna || "***";
+              let closeP = res?.closePanna || "***";
+              let jodi = res?.jodi || "**";
+
+              // If Jodi contains '*', Close has NOT been declared yet -> force '***'
+              if (jodi.includes("*") || !res?.closePanna) {
+                closeP = "***";
+              }
+
+              if (openP === "***" && closeP === "***") {
+                jodi = "**";
+              }
+
+              return (
+                <div
+                  key={m.id}
+                  className="bg-white rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden"
+                >
+                  <div className="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
                     <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <h2 className="text-lg md:text-xl font-extrabold text-amber-400">
-                          {market.name}
-                        </h2>
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          LIVE
-                        </span>
-                      </div>
+                      <span className="text-[11px] font-bold text-slate-400 mr-1.5">#{index + 1}</span>
+                      <span className="text-sm font-extrabold text-slate-900 tracking-wide uppercase">
+                        {m.name}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200">
+                      Live
+                    </span>
+                  </div>
 
-                      <div className="text-3xl md:text-4xl font-mono font-black text-slate-100 my-4 tracking-widest bg-slate-950/60 py-3 rounded-lg border border-slate-800/80">
-                        {latest ? (
-                          <span>
-                            <span className="text-amber-300">{latest.openPanna}</span>
-                            <span className="text-slate-200"> - {latest.jodi} - </span>
-                            <span className="text-amber-300">{latest.closePanna}</span>
-                          </span>
-                        ) : (
-                          <span className="text-slate-600">*** - ** - ***</span>
-                        )}
-                      </div>
-
-                      <div className="text-xs font-semibold text-slate-400 flex justify-between px-2 pt-1 border-t border-slate-800/60 mb-4">
-                        <span>Open: <strong className="text-slate-200">{market.openTime}</strong></span>
-                        <span>Close: <strong className="text-slate-200">{market.closeTime}</strong></span>
-                      </div>
+                  <div className="p-5 text-center">
+                    <div className="inline-flex items-center justify-center gap-2 sm:gap-3 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl shadow-xs">
+                      <span className="text-xl sm:text-2xl font-mono font-bold text-slate-800 tracking-wider">
+                        {openP}
+                      </span>
+                      <span className="text-slate-300 text-xl font-light">-</span>
+                      <span className="text-2xl sm:text-3xl font-mono font-black bg-[#fefce8] border border-[#fef08a] text-[#854d0e] px-3 py-0.5 rounded-lg tracking-widest shadow-xs">
+                        {jodi}
+                      </span>
+                      <span className="text-slate-300 text-xl font-light">-</span>
+                      <span className="text-xl sm:text-2xl font-mono font-bold text-slate-800 tracking-wider">
+                        {closeP}
+                      </span>
                     </div>
 
+                    <div className="mt-3.5 flex items-center justify-center gap-3 text-xs text-slate-500 font-medium">
+                      <span>Open: <strong className="text-slate-700">{m.openTime}</strong></span>
+                      <span>•</span>
+                      <span>Close: <strong className="text-slate-700">{m.closeTime}</strong></span>
+                    </div>
+                  </div>
+
+                  <div className="px-5 pb-4">
                     <Link
-                      href={`/chart?id=${market.id}`}
-                      className="w-full bg-slate-950 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/30 font-bold text-xs py-2 rounded-lg transition-all uppercase tracking-wider block"
+                      href={`/chart?market=${encodeURIComponent(m.name)}`}
+                      className="w-full block text-center py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 text-xs font-bold rounded-lg border border-slate-200 transition"
                     >
                       📊 View Panel Chart
                     </Link>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
