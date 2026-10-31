@@ -73,12 +73,7 @@ export default function HomePage() {
               </svg>
               Refresh
             </button>
-            <Link
-              href="/admin"
-              className="text-xs font-bold bg-[#0c1a30] hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg shadow-xs transition inline-flex items-center gap-1"
-            >
-              Admin
-            </Link>
+            
           </div>
         </div>
       </header>

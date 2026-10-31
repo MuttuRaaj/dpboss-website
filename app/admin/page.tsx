@@ -25,6 +25,12 @@ interface ResultEntry {
   isHoliday: boolean;
 }
 
+interface CurrentUser {
+  name: string;
+  role: "superadmin" | "market_admin";
+  allowedMarkets: string[];
+}
+
 function isValidMatkaPanna(panna: string): boolean {
   const clean = panna.replace(/\D/g, "");
   if (clean.length !== 3) return false;
@@ -48,6 +54,7 @@ export default function AdminPage() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
   const [verifyingPin, setVerifyingPin] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
   // Dashboard Data States
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -63,7 +70,13 @@ export default function AdminPage() {
   // Check persistent session on load
   useEffect(() => {
     const authState = sessionStorage.getItem("admin_authenticated");
-    if (authState === "true") {
+    const storedUser = sessionStorage.getItem("admin_user");
+    if (authState === "true" && storedUser) {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+      } catch {
+        // ignore parse error
+      }
       setIsAuthenticated(true);
       loadDashboardData();
     } else {
@@ -108,6 +121,17 @@ export default function AdminPage() {
     }
   };
 
+  // Helper to test if logged in user is allowed to edit a given market
+  const canEditMarket = (marketName: string): boolean => {
+    if (!currentUser) return false;
+    if (currentUser.role === "superadmin" || currentUser.allowedMarkets.includes("ALL")) {
+      return true;
+    }
+    return currentUser.allowedMarkets.some(
+      (m) => m.trim().toUpperCase() === marketName.trim().toUpperCase()
+    );
+  };
+
   // PIN Form Submission
   const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,7 +153,15 @@ export default function AdminPage() {
         throw new Error(data.error || "Incorrect PIN");
       }
 
+      const userProfile: CurrentUser = data.user || {
+        name: "Admin",
+        role: "superadmin",
+        allowedMarkets: ["ALL"],
+      };
+
       sessionStorage.setItem("admin_authenticated", "true");
+      sessionStorage.setItem("admin_user", JSON.stringify(userProfile));
+      setCurrentUser(userProfile);
       setIsAuthenticated(true);
       loadDashboardData();
     } catch (err: any) {
@@ -142,16 +174,21 @@ export default function AdminPage() {
   // Logout / Lock Action
   const handleLock = () => {
     sessionStorage.removeItem("admin_authenticated");
+    sessionStorage.removeItem("admin_user");
     setIsAuthenticated(false);
+    setCurrentUser(null);
     setPinInput("");
     setPinError("");
   };
 
   const handlePannaChange = (
     marketId: string | number,
+    marketName: string,
     field: "openPanna" | "closePanna",
     val: string
   ) => {
+    if (!canEditMarket(marketName)) return;
+
     const cleanVal = val.replace(/\D/g, "").slice(0, 3);
     const isFieldOpen = field === "openPanna";
 
@@ -193,7 +230,9 @@ export default function AdminPage() {
     });
   };
 
-  const handleHolidayToggle = (marketId: string | number) => {
+  const handleHolidayToggle = (marketId: string | number, marketName: string) => {
+    if (!canEditMarket(marketName)) return;
+
     setEntries((prev) => ({
       ...prev,
       [marketId]: {
@@ -215,25 +254,40 @@ export default function AdminPage() {
     setErrorMessage(null);
 
     try {
-      const payload = Object.entries(entries).map(([marketId, data]) => {
-        let jodi = null;
-        if (data.isHoliday) {
-          jodi = "**";
-        } else if (data.openD && data.closeD) {
-          jodi = `${data.openD}${data.closeD}`;
-        } else if (data.openD) {
-          jodi = `${data.openD}*`;
-        }
+      // Filter payload so market operators only submit updates for their allowed markets
+      const payload = markets
+        .filter((market) => canEditMarket(market.name))
+        .map((market) => {
+          const data = entries[market.id] || {
+            openPanna: "",
+            openD: "",
+            closePanna: "",
+            closeD: "",
+            isHoliday: false,
+          };
 
-        return {
-          marketId: isNaN(Number(marketId)) ? marketId : Number(marketId),
-          date: selectedDate,
-          openPanna: data.isHoliday ? "***" : data.openPanna || "",
-          closePanna: data.isHoliday ? "***" : data.closePanna || "",
-          jodi: jodi || "",
-          isHoliday: data.isHoliday,
-        };
-      });
+          let jodi = null;
+          if (data.isHoliday) {
+            jodi = "**";
+          } else if (data.openD && data.closeD) {
+            jodi = `${data.openD}${data.closeD}`;
+          } else if (data.openD) {
+            jodi = `${data.openD}*`;
+          }
+
+          return {
+            marketId: isNaN(Number(market.id)) ? market.id : Number(market.id),
+            date: selectedDate,
+            openPanna: data.isHoliday ? "***" : data.openPanna || "",
+            closePanna: data.isHoliday ? "***" : data.closePanna || "",
+            jodi: jodi || "",
+            isHoliday: data.isHoliday,
+          };
+        });
+
+      if (payload.length === 0) {
+        throw new Error("No authorized markets to update.");
+      }
 
       const res = await fetch("/api/results", {
         method: "POST",
@@ -246,7 +300,7 @@ export default function AdminPage() {
         throw new Error(errData?.error || "Failed to save results");
       }
 
-      setSuccessMessage("All market results saved successfully!");
+      setSuccessMessage("Market results saved successfully!");
       setTimeout(() => setSuccessMessage(null), 4000);
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to update results");
@@ -268,15 +322,15 @@ export default function AdminPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-slate-200 p-7 text-center">
-          <div className="w-12 h-12 rounded-xl bg-[#0c1a30] text-amber-400 mx-auto flex items-center justify-center mb-4 shadow-xs">
+        <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-7 text-center shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-[#0c1a30] text-amber-400 mx-auto flex items-center justify-center mb-4">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
 
           <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Admin Passcode</h2>
-          <p className="text-xs text-slate-500 mt-1 mb-6">Enter master PIN to manage market results</p>
+          <p className="text-xs text-slate-500 mt-1 mb-6">Enter PIN to access your authorized market dashboard</p>
 
           <form onSubmit={handlePinSubmit} className="space-y-4">
             <input
@@ -286,7 +340,7 @@ export default function AdminPage() {
               placeholder="••••"
               value={pinInput}
               onChange={(e) => setPinInput(e.target.value)}
-              className="w-full text-center tracking-[0.5em] font-mono text-2xl py-3 px-4 bg-slate-50 border border-slate-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-hidden font-bold"
+              className="w-full text-center tracking-[0.5em] font-mono text-2xl py-3 px-4 bg-slate-50 border border-slate-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none font-bold"
             />
 
             {pinError && (
@@ -298,7 +352,7 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={verifyingPin || !pinInput}
-              className="w-full bg-[#0c1a30] hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm cursor-pointer shadow-xs disabled:opacity-50"
+              className="w-full bg-[#0c1a30] hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm cursor-pointer disabled:opacity-50"
             >
               {verifyingPin ? "Verifying..." : "Unlock Dashboard"}
             </button>
@@ -331,7 +385,14 @@ export default function AdminPage() {
               </svg>
             </Link>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Market Results Admin</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Market Results Admin</h1>
+                {currentUser && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    {currentUser.name}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-500 hidden sm:block">Declare daily results & auto-calculate sums</p>
             </div>
           </div>
@@ -375,7 +436,7 @@ export default function AdminPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 outline-hidden cursor-pointer text-sm"
+                className="bg-transparent font-semibold text-slate-800 outline-none cursor-pointer text-sm"
               />
             </div>
           </div>
@@ -417,13 +478,28 @@ export default function AdminPage() {
                 isHoliday: false,
               };
 
+              const isEditable = canEditMarket(market.name);
+
               return (
                 <div
                   key={market.id}
-                  className="bg-white rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between overflow-hidden"
+                  className={`bg-white rounded-xl border shadow-xs transition-shadow flex flex-col justify-between overflow-hidden ${
+                    isEditable ? "border-slate-300 ring-1 ring-blue-500/20" : "border-slate-200 opacity-75"
+                  }`}
                 >
                   <div className="bg-slate-100 px-4 py-2 text-xs font-bold text-slate-500 border-b border-slate-200 flex items-center justify-between">
-                    <span>#{index + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <span>#{index + 1}</span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          isEditable
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            : "bg-slate-200 text-slate-600"
+                        }`}
+                      >
+                        {isEditable ? "Authorized" : "Read-Only"}
+                      </span>
+                    </div>
                     <span className="text-[11px] font-semibold bg-white text-slate-600 px-2 py-0.5 rounded border border-slate-200">
                       {market.openTime} - {market.closeTime}
                     </span>
@@ -441,18 +517,18 @@ export default function AdminPage() {
                         <input
                           type="text"
                           inputMode="numeric"
-                          placeholder="Panna"
+                          placeholder={isEditable ? "Panna" : "Locked"}
                           maxLength={3}
-                          disabled={data.isHoliday}
+                          disabled={!isEditable || data.isHoliday}
                           value={data.openPanna}
                           onChange={(e) =>
-                            handlePannaChange(market.id, "openPanna", e.target.value)
+                            handlePannaChange(market.id, market.name, "openPanna", e.target.value)
                           }
-                          className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm font-bold text-center tracking-widest outline-hidden transition ${
+                          className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm font-bold text-center tracking-widest outline-none transition ${
                             data.openError
                               ? "border-rose-500 text-rose-600 bg-rose-50/50"
                               : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          } disabled:bg-slate-100 disabled:text-slate-400`}
+                          } disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed`}
                         />
                         <div
                           className={`w-12 h-9.5 rounded-lg flex items-center justify-center font-extrabold text-sm shadow-xs select-none ${
@@ -478,18 +554,18 @@ export default function AdminPage() {
                         <input
                           type="text"
                           inputMode="numeric"
-                          placeholder="Panna"
+                          placeholder={isEditable ? "Panna" : "Locked"}
                           maxLength={3}
-                          disabled={data.isHoliday}
+                          disabled={!isEditable || data.isHoliday}
                           value={data.closePanna}
                           onChange={(e) =>
-                            handlePannaChange(market.id, "closePanna", e.target.value)
+                            handlePannaChange(market.id, market.name, "closePanna", e.target.value)
                           }
-                          className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm font-bold text-center tracking-widest outline-hidden transition ${
+                          className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm font-bold text-center tracking-widest outline-none transition ${
                             data.closeError
                               ? "border-rose-500 text-rose-600 bg-rose-50/50"
                               : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          } disabled:bg-slate-100 disabled:text-slate-400`}
+                          } disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed`}
                         />
                         <div
                           className={`w-12 h-9.5 rounded-lg flex items-center justify-center font-extrabold text-sm shadow-xs select-none ${
@@ -510,12 +586,13 @@ export default function AdminPage() {
 
                     {/* Holiday */}
                     <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
-                      <label className="text-xs font-semibold text-slate-600 cursor-pointer flex items-center gap-2">
+                      <label className={`text-xs font-semibold flex items-center gap-2 ${isEditable ? "text-slate-600 cursor-pointer" : "text-slate-400 cursor-not-allowed"}`}>
                         <input
                           type="checkbox"
+                          disabled={!isEditable}
                           checked={data.isHoliday}
-                          onChange={() => handleHolidayToggle(market.id)}
-                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                          onChange={() => handleHolidayToggle(market.id, market.name)}
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 disabled:cursor-not-allowed"
                         />
                         Market Holiday
                       </label>
@@ -532,7 +609,9 @@ export default function AdminPage() {
       <footer className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-slate-200 py-3 px-4 z-40 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <p className="text-xs text-slate-500 hidden sm:block">
-            Ascending order enforced. Leaving Close blank updates Open draw without showing closing numbers.
+            {currentUser?.role === "superadmin"
+              ? "Super Admin Mode: You have access to declare and update all markets."
+              : `Operator Mode: Only saving updates for authorized market (${currentUser?.allowedMarkets.join(", ")}).`}
           </p>
           <button
             type="button"
@@ -548,8 +627,10 @@ export default function AdminPage() {
                 </svg>
                 Saving Results...
               </>
-            ) : (
+            ) : currentUser?.role === "superadmin" ? (
               "Save All Results"
+            ) : (
+              "Save Authorized Market"
             )}
           </button>
         </div>
