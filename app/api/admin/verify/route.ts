@@ -43,25 +43,12 @@ const PIN_MAP: Record<string, AdminRole> = {
 export async function POST(req: Request) {
   try {
     const { pin } = await req.json();
-    const fallbackPin = process.env.ADMIN_PIN || "1234";
 
-    // 1. Check known PINs
+    // Check if entered PIN exists in PIN_MAP
     if (pin && PIN_MAP[pin]) {
       return NextResponse.json({
         success: true,
         user: PIN_MAP[pin],
-      });
-    }
-
-    // 2. Check fallback env PIN (grants superadmin access)
-    if (pin === fallbackPin) {
-      return NextResponse.json({
-        success: true,
-        user: {
-          name: "Super Admin",
-          role: "superadmin",
-          allowedMarkets: ["ALL"],
-        },
       });
     }
 
