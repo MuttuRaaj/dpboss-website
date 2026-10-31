@@ -11,7 +11,24 @@ export async function GET() {
       },
       orderBy: { createdAt: "asc" },
     });
-    return NextResponse.json(markets);
+
+    // Custom sorting: Sagar Day (#1), Sagar Night (#2), followed by remaining markets
+    const sortedMarkets = [...markets].sort((a, b) => {
+      const getPriority = (name: string) => {
+        const upper = name.trim().toUpperCase();
+        if (upper === "SAGAR DAY") return 1;
+        if (upper === "SAGAR NIGHT") return 2;
+        return 100;
+      };
+
+      const pA = getPriority(a.name);
+      const pB = getPriority(b.name);
+
+      if (pA !== pB) return pA - pB;
+      return 0;
+    });
+
+    return NextResponse.json(sortedMarkets);
   } catch (error: any) {
     console.error("GET /api/markets error:", error?.message || error);
     return NextResponse.json({ error: error?.message || "Failed to fetch markets" }, { status: 500 });
