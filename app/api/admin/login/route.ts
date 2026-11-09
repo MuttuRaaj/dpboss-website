@@ -1,49 +1,53 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-// Define users, credentials, and their allowed market IDs or names
-// Use "ALL" for super admin (Sagar)
-interface AdminAccount {
+interface ClientAccount {
   user: string;
   pass: string;
   name: string;
   role: "superadmin" | "market_admin";
-  allowedMarkets: string[]; // e.g. ["ALL"] or ["KALYAN MATKA", "TIME BAZAR"]
+  allowedMarkets: string[]; // Market names or "ALL"
 }
 
-const ADMIN_ACCOUNTS: AdminAccount[] = [
+// Credentials registry maintained by the developer
+const CLIENT_ACCOUNTS: ClientAccount[] = [
+  // Super Admin (Sagar) - Full visibility & access to all markets
   {
     user: "sagar",
-    pass: "sagar123", // change to desired secure password
-    name: "Sagar (Super Admin)",
+    pass: "sagar@9999",
+    name: "Sagar (Platform Owner)",
     role: "superadmin",
     allowedMarkets: ["ALL"],
   },
+  // Kalyan Client - Sees only Kalyan Day / Night
   {
-    user: "kalyan",
-    pass: "kalyan123", // client password for Kalyan Matka
-    name: "Kalyan Operator",
+    user: "kalyan_admin",
+    pass: "kalyan@123",
+    name: "Kalyan Matka Admin",
     role: "market_admin",
     allowedMarkets: ["KALYAN MATKA"],
   },
+  // Time Bazar Client
   {
-    user: "timebazar",
-    pass: "time123", // client password for Time Bazar
-    name: "Time Bazar Operator",
+    user: "time_admin",
+    pass: "time@123",
+    name: "Time Bazar Admin",
     role: "market_admin",
     allowedMarkets: ["TIME BAZAR"],
   },
+  // Milan Day Client
   {
-    user: "milanday",
-    pass: "milan123", // client password for Milan Day
-    name: "Milan Day Operator",
+    user: "milan_admin",
+    pass: "milan@123",
+    name: "Milan Day Admin",
     role: "market_admin",
     allowedMarkets: ["MILAN DAY"],
   },
+  // Rajdhani Night Client
   {
-    user: "rajdhani",
-    pass: "rajdhani123", // client password for Rajdhani Night
-    name: "Rajdhani Operator",
+    user: "rajdhani_admin",
+    pass: "rajdhani@123",
+    name: "Rajdhani Night Admin",
     role: "market_admin",
     allowedMarkets: ["RAJDHANI NIGHT"],
   },
@@ -53,16 +57,20 @@ export async function POST(request: Request) {
   try {
     const { username, password } = await request.json();
 
-    // Check against defined accounts (or fallback to env admin as superadmin)
-    const envUser = process.env.ADMIN_USER || "admin";
-    const envPass = process.env.ADMIN_PASS || "admin123";
+    const cleanUser = username?.trim().toLowerCase();
+    const cleanPass = password?.trim();
 
-    let matchedAccount = ADMIN_ACCOUNTS.find(
-      (acc) => acc.user.toLowerCase() === username?.trim().toLowerCase() && acc.pass === password
+    // Check predefined client accounts
+    let account = CLIENT_ACCOUNTS.find(
+      (acc) => acc.user.toLowerCase() === cleanUser && acc.pass === cleanPass
     );
 
-    if (!matchedAccount && username === envUser && password === envPass) {
-      matchedAccount = {
+    // Fallback to env superadmin if matched
+    const envUser = (process.env.ADMIN_USER || "admin").toLowerCase();
+    const envPass = process.env.ADMIN_PASS || "admin123";
+
+    if (!account && cleanUser === envUser && cleanPass === envPass) {
+      account = {
         user: envUser,
         pass: envPass,
         name: "Super Admin",
@@ -71,30 +79,36 @@ export async function POST(request: Request) {
       };
     }
 
-    if (matchedAccount) {
-      const sessionData = {
-        user: matchedAccount.user,
-        name: matchedAccount.name,
-        role: matchedAccount.role,
-        allowedMarkets: matchedAccount.allowedMarkets,
-      };
-
-      const cookieStore = await cookies();
-      cookieStore.set("admin_session", JSON.stringify(sessionData), {
-        httpOnly: true,
-        path: "/",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24, // 24 hours
-      });
-
-      return NextResponse.json({
-        success: true,
-        user: sessionData,
-      });
+    if (!account) {
+      return NextResponse.json(
+        { error: "Invalid username or password" },
+        { status: 401 }
+      );
     }
 
-    return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
+    const sessionPayload = {
+      user: account.user,
+      name: account.name,
+      role: account.role,
+      allowedMarkets: account.allowedMarkets,
+    };
+
+    const cookieStore = await cookies();
+    cookieStore.set("admin_session", JSON.stringify(sessionPayload), {
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24, // 24 hours
+    });
+
+    return NextResponse.json({
+      success: true,
+      user: sessionPayload,
+    });
   } catch {
-    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Authentication failed. Server error." },
+      { status: 500 }
+    );
   }
 }
