@@ -4,6 +4,11 @@ const prisma = new PrismaClient();
 async function main() {
   const newMarkets = [
     {
+      name: "SAGAR MORNING",
+      openTime: "10:30 AM",
+      closeTime: "11:30 AM",
+    },
+    {
       name: "SAGAR DAY",
       openTime: "01:30 PM",
       closeTime: "02:30 PM",

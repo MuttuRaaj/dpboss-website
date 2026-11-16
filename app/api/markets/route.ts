@@ -12,12 +12,13 @@ export async function GET() {
       orderBy: { createdAt: "asc" },
     });
 
-    // Custom sorting: Sagar Day (#1), Sagar Night (#2), followed by remaining markets
+    // Custom sorting: Sagar Morning (#1), Sagar Day (#2), Sagar Night (#3), followed by remaining markets
     const sortedMarkets = [...markets].sort((a, b) => {
       const getPriority = (name: string) => {
         const upper = name.trim().toUpperCase();
-        if (upper === "SAGAR DAY") return 1;
-        if (upper === "SAGAR NIGHT") return 2;
+        if (upper === "SAGAR MORNING") return 1;
+        if (upper === "SAGAR DAY") return 2;
+        if (upper === "SAGAR NIGHT") return 3;
         return 100;
       };
 

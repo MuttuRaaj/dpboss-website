@@ -113,7 +113,6 @@ export default function AdminPage() {
       const data = await res.json();
       const allMarkets: Market[] = Array.isArray(data) ? data : data.markets || [];
 
-      // Requirement 1: Only show the client's assigned markets (Super Admin sees all)
       const visibleMarkets =
         user.role === "superadmin" || user.allowedMarkets.includes("ALL")
           ? allMarkets
@@ -165,7 +164,7 @@ export default function AdminPage() {
       const filtered = items.filter((h) => allowedIds.has(h.marketId));
       setHistory(filtered);
     } catch (err) {
-      console.error("Failed to fetch history", err);
+      console.error("Failed to fetch upload history", err);
     }
   };
 
@@ -257,7 +256,6 @@ export default function AdminPage() {
     }));
   };
 
-  // Requirement 3: Edit mistakes from history directly into the form
   const handleEditFromHistory = (item: HistoryItem) => {
     const formattedDate = new Date(item.date).toISOString().split("T")[0];
     setSelectedDate(formattedDate);
@@ -351,47 +349,53 @@ export default function AdminPage() {
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center text-slate-500 text-sm">
+      <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center text-slate-500 text-sm">
         Authenticating...
       </div>
     );
   }
 
-  // Client Username/Password Login Screen
+  // Client Login Screen matching DPBoss #0c1a30 Deep Navy & Amber Gold Theme
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-          <div className="w-12 h-12 rounded-xl bg-slate-900 text-amber-400 mx-auto flex items-center justify-center mb-4">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+      <div className="min-h-screen bg-[#0c1a30] flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 p-8">
+          <div className="w-12 h-12 rounded-xl bg-[#0c1a30] text-amber-400 font-black mx-auto flex items-center justify-center mb-4 text-base shadow-md">
+            DP
           </div>
 
-          <h2 className="text-xl font-extrabold text-slate-900 text-center tracking-tight">Client Admin Portal</h2>
-          <p className="text-xs text-slate-500 text-center mt-1 mb-6">Enter assigned credentials to access your market</p>
+          <h2 className="text-xl font-extrabold text-[#0c1a30] text-center tracking-tight">
+            DPBOSS Operator Portal
+          </h2>
+          <p className="text-xs text-slate-500 text-center mt-1 mb-6">
+            Enter assigned credentials to access your market
+          </p>
 
           <form onSubmit={handleLoginSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Username</label>
+              <label className="block text-xs font-bold text-[#0c1a30] uppercase mb-1">
+                Username
+              </label>
               <input
                 type="text"
                 autoFocus
-                placeholder="e.g. kalyan_admin"
+                placeholder="e.g. sagar"
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0c1a30]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Password</label>
+              <label className="block text-xs font-bold text-[#0c1a30] uppercase mb-1">
+                Password
+              </label>
               <input
                 type="password"
                 placeholder="••••••••"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0c1a30]"
               />
             </div>
 
@@ -404,14 +408,14 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={loggingIn || !usernameInput || !passwordInput}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm cursor-pointer shadow-md disabled:opacity-50"
+              className="w-full bg-[#0c1a30] hover:bg-[#162947] text-amber-400 font-extrabold py-3 rounded-xl transition text-sm cursor-pointer shadow-md disabled:opacity-50"
             >
               {loggingIn ? "Verifying..." : "Sign In to Portal"}
             </button>
           </form>
 
           <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <Link href="/" className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition">
+            <Link href="/" className="text-xs font-semibold text-slate-500 hover:text-[#0c1a30] transition">
               ← Return to Live Website
             </Link>
           </div>
@@ -421,25 +425,25 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 pb-28">
-      {/* Top Header */}
+    <div className="min-h-screen bg-[#f1f5f9] text-slate-800 pb-28">
+      {/* Top Header matching DPBoss homepage */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="p-2 -ml-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition"
+              className="w-9 h-9 rounded-xl bg-[#0c1a30] text-amber-400 font-black flex items-center justify-center text-sm shadow-xs hover:opacity-90 transition"
               title="Return to Public Website"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
+              DP
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">Market Operator Portal</h1>
+                <h1 className="text-base sm:text-lg font-extrabold text-[#0c1a30] tracking-tight">
+                  DPBOSS OPERATOR PORTAL
+                </h1>
                 {currentUser && (
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#fefce8] text-[#854d0e] border border-[#fef08a]">
                     {currentUser.name}
                   </span>
                 )}
@@ -453,13 +457,16 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2.5">
+            <Link
+              href="/"
+              className="hidden sm:inline-flex text-xs font-bold text-[#0c1a30] bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 transition"
+            >
+              View Live Site
+            </Link>
             <button
               onClick={handleLogout}
               className="text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-200 transition inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
               <span>Logout</span>
             </button>
           </div>
@@ -468,19 +475,22 @@ export default function AdminPage() {
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <div className="bg-white rounded-xl p-4 shadow-xs border border-slate-200 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* DPBoss Dark Navy & Amber Banner */}
+        <div className="bg-[#0c1a30] text-white rounded-xl p-4 sm:p-5 shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Date for Upload:</span>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">
+              Date for Upload:
+            </span>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 font-bold text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
             />
           </div>
 
-          <div className="text-xs font-medium text-slate-500">
-            Visible Markets: <span className="font-bold text-slate-800">{markets.length}</span>
+          <div className="text-xs font-semibold bg-white/10 px-3 py-1.5 rounded-lg border border-white/10 text-slate-200">
+            Visible Markets: <span className="font-bold text-amber-400">{markets.length}</span>
           </div>
         </div>
 
@@ -505,11 +515,11 @@ export default function AdminPage() {
           <div className="text-center py-16 text-slate-400 text-sm">Loading market dashboard...</div>
         ) : markets.length === 0 ? (
           <div className="bg-white p-8 rounded-xl border border-slate-200 text-center text-slate-500">
-            No authorized markets configured for your user account. Please contact the platform admin.
+            No authorized markets configured for your user account.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {markets.map((market) => {
+            {markets.map((market, index) => {
               const data = entries[market.id] || {
                 openPanna: "",
                 openD: "",
@@ -523,19 +533,19 @@ export default function AdminPage() {
               return (
                 <div
                   key={market.id}
-                  className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between"
+                  className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between"
                 >
                   <div className="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
-                      Upload Window
+                      #{index + 1} Upload Window
                     </span>
-                    <span className="text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded">
+                    <span className="text-[11px] font-bold bg-[#fefce8] text-[#854d0e] border border-[#fef08a] px-2 py-0.5 rounded">
                       Open: {market.openTime} | Close: {market.closeTime}
                     </span>
                   </div>
 
                   <div className="p-5 space-y-4">
-                    <h2 className="text-base font-extrabold text-slate-900 tracking-wide uppercase">
+                    <h2 className="text-base font-extrabold text-[#0c1a30] tracking-wide uppercase">
                       {market.name}
                     </h2>
 
@@ -556,7 +566,7 @@ export default function AdminPage() {
                           className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm font-bold text-center tracking-widest outline-none transition ${
                             data.openError
                               ? "border-rose-500 text-rose-600 bg-rose-50"
-                              : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              : "border-slate-300 focus:border-[#0c1a30] focus:ring-2 focus:ring-slate-200"
                           } disabled:bg-slate-100`}
                         />
                         <div
@@ -593,7 +603,7 @@ export default function AdminPage() {
                           className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm font-bold text-center tracking-widest outline-none transition ${
                             data.closeError
                               ? "border-rose-500 text-rose-600 bg-rose-50"
-                              : "border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              : "border-slate-300 focus:border-[#0c1a30] focus:ring-2 focus:ring-slate-200"
                           } disabled:bg-slate-100`}
                         />
                         <div
@@ -613,14 +623,14 @@ export default function AdminPage() {
                       )}
                     </div>
 
-                    {/* Holiday */}
+                    {/* Holiday & Publish */}
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                       <label className="text-xs font-semibold text-slate-600 cursor-pointer flex items-center gap-2">
                         <input
                           type="checkbox"
                           checked={data.isHoliday}
                           onChange={() => handleHolidayToggle(market.id)}
-                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                          className="w-4 h-4 rounded text-[#0c1a30] focus:ring-[#0c1a30] border-slate-300 cursor-pointer"
                         />
                         Market Holiday
                       </label>
@@ -629,7 +639,7 @@ export default function AdminPage() {
                         type="button"
                         onClick={() => handleSave(market.id)}
                         disabled={saving}
-                        className="text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 px-3 py-1.5 rounded-lg transition"
+                        className="text-xs font-bold text-amber-400 bg-[#0c1a30] hover:bg-[#162947] px-3.5 py-1.5 rounded-lg transition cursor-pointer"
                       >
                         Publish
                       </button>
@@ -642,17 +652,17 @@ export default function AdminPage() {
         )}
 
         {/* Upload History & In-Line Edit */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Upload History</h3>
+              <h3 className="text-base font-extrabold text-[#0c1a30]">Upload History</h3>
               <p className="text-xs text-slate-500">
                 Ordered log of declared results. Click <strong>Edit</strong> on any entry to fix incorrect opening/closing numbers.
               </p>
             </div>
             <button
               onClick={() => fetchHistory(markets)}
-              className="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition"
+              className="text-xs font-bold text-[#0c1a30] bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-300 transition cursor-pointer"
             >
               Refresh Log
             </button>
@@ -661,14 +671,14 @@ export default function AdminPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100 text-slate-600 uppercase font-bold border-b border-slate-200">
-                  <th className="py-3 px-3">Date</th>
+                <tr className="bg-[#0c1a30] text-amber-400 uppercase font-bold">
+                  <th className="py-3 px-3 rounded-tl-lg">Date</th>
                   <th className="py-3 px-3">Time Uploaded</th>
                   <th className="py-3 px-3">Market</th>
                   <th className="py-3 px-3 text-center">Open Panna</th>
                   <th className="py-3 px-3 text-center">Jodi</th>
                   <th className="py-3 px-3 text-center">Close Panna</th>
-                  <th className="py-3 px-3 text-right">Action</th>
+                  <th className="py-3 px-3 text-right rounded-tr-lg">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -695,14 +705,16 @@ export default function AdminPage() {
                       <tr key={item.id} className="hover:bg-slate-50 transition">
                         <td className="py-3 px-3 font-semibold text-slate-800">{rowDate}</td>
                         <td className="py-3 px-3 text-slate-500">{uploadTime}</td>
-                        <td className="py-3 px-3 font-bold text-slate-900 uppercase">
+                        <td className="py-3 px-3 font-extrabold text-[#0c1a30] uppercase">
                           {item.market.name}
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-bold text-slate-700">
                           {item.openPanna || "-"}
                         </td>
-                        <td className="py-3 px-3 text-center font-mono font-extrabold text-amber-600">
-                          {item.jodi || "-"}
+                        <td className="py-3 px-3 text-center font-mono font-extrabold text-[#854d0e]">
+                          <span className="bg-[#fefce8] border border-[#fef08a] px-2 py-0.5 rounded">
+                            {item.jodi || "-"}
+                          </span>
                         </td>
                         <td className="py-3 px-3 text-center font-mono font-bold text-slate-700">
                           {item.closePanna || "-"}
@@ -711,7 +723,7 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => handleEditFromHistory(item)}
-                            className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1 rounded font-bold transition cursor-pointer"
+                            className="bg-[#0c1a30] text-amber-400 hover:bg-[#162947] px-3 py-1 rounded font-bold transition cursor-pointer"
                           >
                             Edit
                           </button>
@@ -736,7 +748,7 @@ export default function AdminPage() {
             type="button"
             onClick={() => handleSave()}
             disabled={saving}
-            className="w-full sm:w-auto sm:min-w-[240px] ml-auto bg-slate-900 text-white py-2.5 px-6 rounded-lg font-bold text-sm tracking-wide shadow-md hover:bg-slate-800 transition flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
+            className="w-full sm:w-auto sm:min-w-[240px] ml-auto bg-[#0c1a30] text-amber-400 py-2.5 px-6 rounded-lg font-extrabold text-sm tracking-wide shadow-md hover:bg-[#162947] transition flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
           >
             {saving ? "Publishing..." : "Save & Update Live"}
           </button>
