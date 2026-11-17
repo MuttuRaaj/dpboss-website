@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const markets = await prisma.market.findMany({
       include: {
         results: {
-          orderBy: { date: "desc" },
+          orderBy: [
+            { date: "desc" },
+            { updatedAt: "desc" },
+          ],
+          take: 5,
         },
       },
       orderBy: { createdAt: "asc" },
