@@ -51,7 +51,10 @@ function formatDate(d: Date): string {
 
 function ChartContent() {
   const searchParams = useSearchParams();
-  const marketId = searchParams.get("id") || searchParams.get("marketId");
+  const marketParam =
+    searchParams.get("market") ||
+    searchParams.get("id") ||
+    searchParams.get("marketId");
 
   const [market, setMarket] = useState<Market | null>(null);
   const [weeks, setWeeks] = useState<WeekRow[]>([]);
@@ -61,12 +64,16 @@ function ChartContent() {
   useEffect(() => {
     async function loadData() {
       try {
-        const res = await fetch("/api/markets");
+        const res = await fetch("/api/markets", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to fetch markets");
         const markets: Market[] = await res.json();
 
-        const selectedMarket = marketId
-          ? markets.find((m) => m.id === marketId) || markets[0]
+        const selectedMarket = marketParam
+          ? markets.find(
+              (m) =>
+                String(m.id) === marketParam ||
+                m.name.trim().toUpperCase() === marketParam.trim().toUpperCase()
+            ) || markets[0]
           : markets[0];
 
         if (!selectedMarket) {
@@ -127,7 +134,7 @@ function ChartContent() {
     }
 
     loadData();
-  }, [marketId]);
+  }, [marketParam]);
 
   if (loading) {
     return (
@@ -293,18 +300,16 @@ function ChartContent() {
                                 </span>
                               </div>
                             )
+                          ) : viewMode === "panel" ? (
+                            <div className="flex flex-col items-center justify-center font-mono text-slate-600 text-xs py-2">
+                              <span>***</span>
+                              <span className="font-bold my-0.5">**</span>
+                              <span>***</span>
+                            </div>
                           ) : (
-                            viewMode === "panel" ? (
-                              <div className="flex flex-col items-center justify-center font-mono text-slate-600 text-xs py-2">
-                                <span>***</span>
-                                <span className="font-bold my-0.5">**</span>
-                                <span>***</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center font-mono text-slate-600 text-base py-3">
-                                **
-                              </div>
-                            )
+                            <div className="flex items-center justify-center font-mono text-slate-600 text-base py-3">
+                              **
+                            </div>
                           )}
                         </td>
                       ))}
